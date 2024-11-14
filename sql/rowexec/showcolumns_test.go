@@ -48,7 +48,7 @@ func TestShowColumns(t *testing.T) {
 	rows, err := sql.RowIterToRows(ctx, iter)
 	require.NoError(err)
 
-	expected := []sql.Row{
+	expected := []sql.UntypedSqlRow{
 		{"a", "text", "NO", "PRI", nil, ""},
 		{"b", "bigint", "YES", "", nil, ""},
 		{"c", "bigint", "NO", "", "1", ""},
@@ -107,7 +107,7 @@ func TestShowColumnsWithIndexes(t *testing.T) {
 	rows, err := sql.RowIterToRows(ctx, iter)
 	require.NoError(err)
 
-	expected := []sql.Row{
+	expected := []sql.UntypedSqlRow{
 		{"a", "text", "NO", "PRI", nil, ""},
 		{"b", "bigint", "YES", "MUL", nil, ""},
 		{"c", "bigint", "NO", "", "1", ""},
@@ -173,7 +173,7 @@ func TestShowColumnsFull(t *testing.T) {
 	rows, err := sql.RowIterToRows(ctx, iter)
 	require.NoError(err)
 
-	expected := []sql.Row{
+	expected := []sql.UntypedSqlRow{
 		{"a", "text", "utf8mb4_0900_bin", "NO", "PRI", nil, "", "", ""},
 		{"b", "bigint", nil, "YES", "", nil, "", "", ""},
 		{"c", "bigint", nil, "NO", "", "1", "", "", "a comment"},

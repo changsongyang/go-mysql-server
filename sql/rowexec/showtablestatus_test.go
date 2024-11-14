@@ -50,7 +50,7 @@ func TestShowTableStatus(t *testing.T) {
 	rows, err := sql.RowIterToRows(ctx, iter)
 	require.NoError(err)
 
-	expected := []sql.Row{
+	expected := []sql.UntypedSqlRow{
 		{"t1", "InnoDB", "10", "Fixed", uint64(0), uint64(0), uint64(0), uint64(0), int64(0), int64(0), nil, nil, nil, nil, sql.Collation_Default.String(), nil, nil, nil},
 		{"t2", "InnoDB", "10", "Fixed", uint64(0), uint64(0), uint64(0), uint64(0), int64(0), int64(0), nil, nil, nil, nil, sql.Collation_Default.String(), nil, nil, nil},
 	}
@@ -65,7 +65,7 @@ func TestShowTableStatus(t *testing.T) {
 	rows, err = sql.RowIterToRows(ctx, iter)
 	require.NoError(err)
 
-	expected = []sql.Row{
+	expected = []sql.UntypedSqlRow{
 		{"t3", "InnoDB", "10", "Fixed", uint64(0), uint64(0), uint64(0), uint64(0), int64(0), int64(0), nil, nil, nil, nil, sql.Collation_Default.String(), nil, nil, nil},
 		{"t4", "InnoDB", "10", "Fixed", uint64(0), uint64(0), uint64(0), uint64(0), int64(0), int64(0), nil, nil, nil, nil, sql.Collation_Default.String(), nil, nil, nil},
 	}

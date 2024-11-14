@@ -31,8 +31,8 @@ func TestLast(t *testing.T) {
 		expected interface{}
 	}{
 		{"no rows", nil, nil},
-		{"one row", []sql.Row{{"first"}}, "first"},
-		{"three rows", []sql.Row{{"first"}, {"second"}, {"last"}}, "last"},
+		{"one row", []sql.UntypedSqlRow{{"first"}}, "first"},
+		{"three rows", []sql.UntypedSqlRow{{"first"}, {"second"}, {"last"}}, "last"},
 	}
 
 	agg := NewLast(expression.NewGetField(0, types.Text, "", false))

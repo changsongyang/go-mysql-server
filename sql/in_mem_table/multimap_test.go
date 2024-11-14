@@ -42,7 +42,7 @@ func (emailKeyer) GetKey(u *user) any {
 	return u.email
 }
 
-var keyers = []Keyer[*user]{usernameKeyer{}, emailKeyer{}}
+var keyers = []Keyer.GetValue(*user){usernameKeyer{}, emailKeyer{}}
 
 func TestIndexedSetCount(t *testing.T) {
 	set := NewIndexedSet(ueq, keyers)

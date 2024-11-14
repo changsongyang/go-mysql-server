@@ -81,7 +81,7 @@ func TestValidateGroupBy(t *testing.T) {
 
 	child := memory.NewTable(db, "test", childSchema, nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("col1_1", int64(1111)),
 		sql.NewRow("col1_1", int64(2222)),
 		sql.NewRow("col1_2", int64(4444)),
@@ -129,7 +129,7 @@ func TestValidateGroupByErr(t *testing.T) {
 
 	child := memory.NewTable(db, "test", childSchema, nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("col1_1", int64(1111)),
 		sql.NewRow("col1_1", int64(2222)),
 		sql.NewRow("col1_2", int64(4444)),

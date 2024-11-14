@@ -362,5 +362,5 @@ func CommonPrefix(str1 string, str2 string) string {
 
 func GetCharacterSet(str string) (charset string, restOfString string) {
 	index := strings.Index(str, "_")
-	return str[:index], str[index:]
+	return str.GetValue(:index], str[index:)
 }

@@ -118,22 +118,22 @@ func TestAvg_NUMS_AND_NULLS(t *testing.T) {
 	}{
 		{
 			"float values with nil",
-			[]sql.Row{{2.0}, {2.0}, {3.}, {4.}, {nil}},
+			[]sql.UntypedSqlRow{{2.0}, {2.0}, {3.}, {4.}, {nil}},
 			float64(2.75),
 		},
 		{
 			"float values with nil",
-			[]sql.Row{{1}, {2}, {3}, {nil}, {nil}},
+			[]sql.UntypedSqlRow{{1}, {2}, {3}, {nil}, {nil}},
 			float64(2.0),
 		},
 		{
 			"no rows",
-			[]sql.Row{},
+			[]sql.UntypedSqlRow{},
 			nil,
 		},
 		{
 			"nil values",
-			[]sql.Row{{nil}, {nil}},
+			[]sql.UntypedSqlRow{{nil}, {nil}},
 			nil,
 		},
 	}
@@ -167,37 +167,37 @@ func TestAvg_Distinct(t *testing.T) {
 	}{
 		{
 			"string int values",
-			[]sql.Row{{"1"}, {"1"}, {"2"}, {"2"}, {"3"}, {"3"}, {"4"}, {"4"}},
+			[]sql.UntypedSqlRow{{"1"}, {"1"}, {"2"}, {"2"}, {"3"}, {"3"}, {"4"}, {"4"}},
 			float64(2.5),
 		},
 		{
 			"string float values",
-			[]sql.Row{{"2.0"}, {"2.0"}, {"3.0"}, {"4.0"}, {"4.0"}},
+			[]sql.UntypedSqlRow{{"2.0"}, {"2.0"}, {"3.0"}, {"4.0"}, {"4.0"}},
 			float64(3.0),
 		},
 		{
 			"string float values",
-			[]sql.Row{{"2.0"}, {"2.0"}, {"3.0"}, {"4.0"}, {"4.0"}},
+			[]sql.UntypedSqlRow{{"2.0"}, {"2.0"}, {"3.0"}, {"4.0"}, {"4.0"}},
 			float64(3.0),
 		},
 		{
 			"float values",
-			[]sql.Row{{2.0}, {2.0}, {3.}, {4.}},
+			[]sql.UntypedSqlRow{{2.0}, {2.0}, {3.}, {4.}},
 			float64(3.0),
 		},
 		{
 			"float values with nil",
-			[]sql.Row{{2.0}, {2.0}, {3.}, {4.}, {nil}},
+			[]sql.UntypedSqlRow{{2.0}, {2.0}, {3.}, {4.}, {nil}},
 			float64(3.0),
 		},
 		{
 			"no rows",
-			[]sql.Row{},
+			[]sql.UntypedSqlRow{},
 			nil,
 		},
 		{
 			"nil values",
-			[]sql.Row{{nil}, {nil}},
+			[]sql.UntypedSqlRow{{nil}, {nil}},
 			nil,
 		},
 	}

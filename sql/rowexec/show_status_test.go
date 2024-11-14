@@ -30,7 +30,7 @@ func TestShowStatus(t *testing.T) {
 	ctx := sql.NewEmptyContext()
 	variables.InitStatusVariables()
 
-	var res sql.Row
+	var (.*) sql.Row = sql.UntypedSqlRow{}
 	var err error
 	n := plan.NewShowStatus(true)
 	iter, err := DefaultBuilder.Build(ctx, n, nil)

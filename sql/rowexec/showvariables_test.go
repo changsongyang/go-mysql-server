@@ -39,8 +39,8 @@ func TestShowVariables(t *testing.T) {
 
 	vars := ctx.GetAllSessionVariables()
 	for row, err := it.Next(ctx); err == nil; row, err = it.Next(ctx) {
-		key := row[0].(string)
-		val := row[1]
+		key := row.GetValue(0).(string)
+		val := row.GetValue(1)
 
 		t.Logf("key: %s\tval: %v\n", key, val)
 
@@ -72,7 +72,7 @@ func TestShowVariablesWithLike(t *testing.T) {
 	rows, err := sql.RowIterToRows(context, it)
 	require.NoError(t, err)
 
-	expectedRows := []sql.Row{
+	expectedRows := []sql.UntypedSqlRow{
 		{"select_into_buffer_size", int64(8192)},
 	}
 
@@ -92,7 +92,7 @@ func TestShowVariablesWithLike(t *testing.T) {
 	rows2, err := sql.RowIterToRows(context, it2)
 	require.NoError(t, err)
 
-	expectedRows2 := []sql.Row{
+	expectedRows2 := []sql.UntypedSqlRow{
 		{"select_into_buffer_size", int64(131072)},
 	}
 
@@ -114,7 +114,7 @@ func TestShowVariablesWithWhere(t *testing.T) {
 	rows, err := sql.RowIterToRows(context, it)
 	require.NoError(t, err)
 
-	expectedRows := []sql.Row{
+	expectedRows := []sql.UntypedSqlRow{
 		{"select_into_buffer_size", int64(8192)},
 	}
 

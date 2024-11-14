@@ -40,7 +40,7 @@ func TestDistinct(t *testing.T) {
 	})
 	child := memory.NewTable(db.BaseDatabase, "test", childSchema, nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("john", "john@doe.com"),
 		sql.NewRow("jane", "jane@doe.com"),
 		sql.NewRow("john", "johnx@doe.com"),
@@ -69,8 +69,8 @@ func TestDistinct(t *testing.T) {
 		}
 
 		require.NoError(err)
-		result, ok := row[0].(string)
-		require.True(ok, "first row column should be string, but is %T", row[0])
+		result, ok := row.GetValue(0).(string)
+		require.True(ok, "first row column should be string, but is %T", row.GetValue(0))
 		results = append(results, result)
 	}
 
@@ -90,7 +90,7 @@ func TestOrderedDistinct(t *testing.T) {
 	})
 	child := memory.NewTable(db.BaseDatabase, "test", childSchema, nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("jane", "jane@doe.com"),
 		sql.NewRow("john", "john@doe.com"),
 		sql.NewRow("john", "johnx@doe.com"),
@@ -119,8 +119,8 @@ func TestOrderedDistinct(t *testing.T) {
 		}
 
 		require.NoError(err)
-		result, ok := row[0].(string)
-		require.True(ok, "first row column should be string, but is %T", row[0])
+		result, ok := row.GetValue(0).(string)
+		require.True(ok, "first row column should be string, but is %T", row.GetValue(0))
 		results = append(results, result)
 	}
 

@@ -384,8 +384,8 @@ func newEq(eq string) sql.Expression {
 	leftTabId, leftColId := getIds(left)
 	rightTabId, rightColId := getIds(right)
 	return expression.NewEquals(
-		expression.NewGetFieldWithTable(leftColId, leftTabId, types.Int64, "", left[0], left[1], false),
-		expression.NewGetFieldWithTable(rightColId, rightTabId, types.Int64, "", right[0], right[1], false),
+		expression.NewGetFieldWithTable(leftColId, leftTabId, types.Int64, "", left.GetValue(0], left[1), false),
+		expression.NewGetFieldWithTable(rightColId, rightTabId, types.Int64, "", right.GetValue(0], right[1), false),
 	)
 }
 

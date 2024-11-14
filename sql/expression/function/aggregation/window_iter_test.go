@@ -73,7 +73,7 @@ func TestWindowIter(t *testing.T) {
 					}),
 			},
 			OutputOrdinals: [][]int{{0, 1}, {2}},
-			Expected: []sql.Row{
+			Expected: []sql.UntypedSqlRow{
 				{"forest", float64(4), "wildflower"},
 				{"forest", float64(8), "wildflower"},
 				{"forest", float64(14), "wildflower"},

@@ -46,10 +46,9 @@ func newMergeJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode,
 		return nil, err
 	}
 
-	fullRow := make(sql.Row, len(row)+len(j.Left().Schema())+len(j.Right().Schema()))
-	fullRow[0] = row
-	if len(row) > 0 {
-		copy(fullRow[0:], row[:])
+	fullRow := sql.NewSqlRowWithLen(row.Len() + len(j.Left().Schema()) + len(j.Right().Schema()))
+	for i, v := range row.Values() {
+		fullRow.SetValue(i, v)
 	}
 
 	// a merge join's first filter provides direction information
@@ -79,7 +78,7 @@ func newMergeJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode,
 		typ:         j.Op,
 		fullRow:     fullRow,
 		scopeLen:    j.ScopeLen,
-		parentLen:   len(row) - j.ScopeLen,
+		parentLen:   row.Len() - j.ScopeLen,
 		leftRowLen:  len(j.Left().Schema()),
 		rightRowLen: len(j.Right().Schema()),
 	}
@@ -306,9 +305,7 @@ func (i *mergeJoinIter) Next(ctx *sql.Context) (sql.Row, error) {
 }
 
 func (i *mergeJoinIter) copyReturnRow() sql.Row {
-	ret := make(sql.Row, len(i.fullRow))
-	copy(ret, i.fullRow)
-	return ret
+	return i.fullRow.Copy()
 }
 
 // incMatch uses two phases to find all left and right rows that match their
@@ -325,8 +322,7 @@ func (i *mergeJoinIter) incMatch(ctx *sql.Context) error {
 
 	if !i.rightDone {
 		// initialize right matches buffer
-		right := make(sql.Row, i.rightRowLen)
-		copy(right, i.fullRow[i.scopeLen+i.parentLen+i.leftRowLen:])
+		right := i.fullRow.Subslice(i.scopeLen+i.parentLen+i.leftRowLen, i.fullRow.Len()).Copy()
 		i.rightBuf = append(i.rightBuf, right)
 
 		match := true
@@ -408,8 +404,8 @@ func (i *mergeJoinIter) lojFinalize() bool {
 
 // nullifyRightRow sets the values corresponding to the right row to nil
 func (i *mergeJoinIter) nullifyRightRow(r sql.Row) sql.Row {
-	for j := i.scopeLen + i.parentLen + i.leftRowLen; j < len(r); j++ {
-		r[j] = nil
+	for j := i.scopeLen + i.parentLen + i.leftRowLen; j < r.Len(); j++ {
+		r.SetValue(j, nil)
 	}
 	return r
 }
@@ -450,12 +446,10 @@ func (i *mergeJoinIter) peekMatch(ctx *sql.Context, iter sql.RowIter) (bool, sql
 	switch iter {
 	case i.left:
 		off = i.scopeLen + i.parentLen
-		restore = make(sql.Row, i.leftRowLen)
-		copy(restore, i.fullRow[off:off+i.leftRowLen])
+		restore = i.fullRow.Subslice(off, off+i.leftRowLen)
 	case i.right:
 		off = i.scopeLen + i.parentLen + i.leftRowLen
-		restore = make(sql.Row, i.rightRowLen)
-		copy(restore, i.fullRow[off:off+i.rightRowLen])
+		restore = i.fullRow.Subslice(off, off+i.rightRowLen)
 	default:
 	}
 
@@ -491,8 +485,8 @@ func (i *mergeJoinIter) exhausted() bool {
 
 // copySubslice copies |src| into |dst| starting at index |off|
 func copySubslice(dst, src sql.Row, off int) {
-	for i, v := range src {
-		dst[off+i] = v
+	for i, v := range src.Values() {
+		dst.SetValue(off+i, v)
 	}
 }
 
@@ -515,8 +509,8 @@ func (i *mergeJoinIter) incLeft(ctx *sql.Context) error {
 	}
 
 	off := i.scopeLen + i.parentLen
-	for j, v := range row {
-		i.fullRow[off+j] = v
+	for j, v := range row.Values() {
+		i.fullRow.SetValue(off+j, v)
 	}
 
 	return nil
@@ -540,8 +534,8 @@ func (i *mergeJoinIter) incRight(ctx *sql.Context) error {
 	}
 
 	off := i.scopeLen + i.parentLen + i.leftRowLen
-	for j, v := range row {
-		i.fullRow[off+j] = v
+	for j, v := range row.Values() {
+		i.fullRow.SetValue(off+j, v)
 	}
 
 	return nil
@@ -553,16 +547,21 @@ func (i *mergeJoinIter) incIter(ctx *sql.Context, iter sql.RowIter, off int) err
 	if err != nil {
 		return err
 	}
-	for j, v := range row {
-		i.fullRow[off+j] = v
+	for j, v := range row.Values() {
+		i.fullRow.SetValue(off+j, v)
 	}
 	return nil
 }
 
 func (i *mergeJoinIter) removeParentRow(r sql.Row) sql.Row {
-	copy(r[i.scopeLen:], r[i.scopeLen+i.parentLen:])
-	r = r[:len(r)-i.parentLen]
+	for j := i.scopeLen + i.parentLen; j < r.Len(); j++ {
+		r.SetValue(j-i.parentLen, r.GetValue(j))
+	}
 	return r
+	//vals := r.Values()
+	//copy(vals[i.scopeLen:], vals[i.scopeLen+i.parentLen:])
+	//vals = vals[:r.Len()-i.parentLen]
+	//return sql.NewUntypedRow(vals...)
 }
 
 func (i *mergeJoinIter) Close(ctx *sql.Context) (err error) {

@@ -105,7 +105,7 @@ func TestDescribeQuery(t *testing.T) {
 	rows, err := sql.RowIterToRows(ctx, iter)
 	require.NoError(err)
 
-	expected := []sql.Row{
+	expected := []sql.UntypedSqlRow{
 		{"Project"},
 		{" ├─ columns: [foo.a, foo.b]"},
 		{" └─ Filter"},

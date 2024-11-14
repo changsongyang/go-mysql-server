@@ -118,7 +118,7 @@ func TestEquals(t *testing.T) {
 		require.Equal(types.Boolean, eq.Type())
 		for cmpResult, cases := range cmpCase {
 			for _, pair := range cases {
-				row := sql.NewRow(pair[0], pair[1])
+				row := sql.NewRow(pair.GetValue(0], pair[1))
 				require.NotNil(row)
 				cmp := eval(t, eq, row)
 				if cmpResult == testEqual {
@@ -145,13 +145,13 @@ func TestNullSafeEquals(t *testing.T) {
 		require.Equal(types.Boolean, seq.Type())
 		for cmpResult, cases := range cmpCase {
 			for _, pair := range cases {
-				row := sql.NewRow(pair[0], pair[1])
+				row := sql.NewRow(pair.GetValue(0], pair[1))
 				require.NotNil(row)
 				cmp := eval(t, seq, row)
 				if cmpResult == testEqual {
 					require.Equal(true, cmp)
 				} else if cmpResult == testNil {
-					if pair[0] == nil && pair[1] == nil {
+					if pair.GetValue(0] == nil && pair[1) == nil {
 						require.Equal(true, cmp)
 					} else {
 						require.Equal(false, cmp)
@@ -176,11 +176,11 @@ func TestLessThan(t *testing.T) {
 		require.Equal(types.Boolean, eq.Type())
 		for cmpResult, cases := range cmpCase {
 			for _, pair := range cases {
-				row := sql.NewRow(pair[0], pair[1])
+				row := sql.NewRow(pair.GetValue(0], pair[1))
 				require.NotNil(row)
 				cmp := eval(t, eq, row)
 				if cmpResult == testLess {
-					require.Equal(true, cmp, "%v < %v", pair[0], pair[1])
+					require.Equal(true, cmp, "%v < %v", pair.GetValue(0], pair[1))
 				} else if cmpResult == testNil {
 					require.Nil(cmp)
 				} else {
@@ -203,7 +203,7 @@ func TestGreaterThan(t *testing.T) {
 		require.Equal(types.Boolean, eq.Type())
 		for cmpResult, cases := range cmpCase {
 			for _, pair := range cases {
-				row := sql.NewRow(pair[0], pair[1])
+				row := sql.NewRow(pair.GetValue(0], pair[1))
 				require.NotNil(row)
 				cmp := eval(t, eq, row)
 				if cmpResult == testGreater {

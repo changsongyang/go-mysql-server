@@ -123,7 +123,7 @@ func getTestingTable(t *testing.T) (*memory.Database, *memory.Table, int) {
 	})
 	testingTable = memory.NewTable(db, "test", childSchema, nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("11a"),
 		sql.NewRow("22a"),
 		sql.NewRow("33a"),

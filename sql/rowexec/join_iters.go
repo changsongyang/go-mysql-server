@@ -59,7 +59,7 @@ func newJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode, row 
 		secondaryProvider: j.Right(),
 		cond:              j.Filter,
 		joinType:          j.Op,
-		rowSize:           len(row) + len(j.Left().Schema()) + len(j.Right().Schema()),
+		rowSize:           row.Len() + len(j.Left().Schema()) + len(j.Right().Schema()),
 		scopeLen:          j.ScopeLen,
 		b:                 b,
 	}), nil
@@ -138,14 +138,15 @@ func (i *joinIter) Next(ctx *sql.Context) (sql.Row, error) {
 			if errors.Is(err, io.EOF) {
 				if !i.foundMatch && i.joinType.IsLeftOuter() {
 					i.primaryRow = nil
-					row := i.buildRow(primary, nil)
+					row := i.buildRow(primary, sql.NewSqlRowWithLen(len(i.secondaryProvider.Schema())))
 					return i.removeParentRow(row), nil
 				}
 				continue
 			} else if errors.Is(err, plan.ErrEmptyCachedResult) {
 				if !i.foundMatch && i.joinType.IsLeftOuter() {
 					i.primaryRow = nil
-					row := i.buildRow(primary, nil)
+					rightNull := sql.NewSqlRowWithLen(len(i.secondaryProvider.Schema()))
+					row := i.buildRow(primary, rightNull)
 					return i.removeParentRow(row), nil
 				}
 
@@ -180,18 +181,15 @@ func (i *joinIter) Next(ctx *sql.Context) (sql.Row, error) {
 }
 
 func (i *joinIter) removeParentRow(r sql.Row) sql.Row {
-	copy(r[i.scopeLen:], r[len(i.parentRow):])
-	r = r[:len(r)-len(i.parentRow)+i.scopeLen]
-	return r
+	vals := r.Values()
+	copy(vals[i.scopeLen:], vals[i.parentRow.Len():])
+	vals = vals[:r.Len()-i.parentRow.Len()+i.scopeLen]
+	return sql.NewUntypedRow(vals...)
 }
 
 // buildRow builds the result set row using the rows from the primary and secondary tables
 func (i *joinIter) buildRow(primary, secondary sql.Row) sql.Row {
-	row := make(sql.Row, i.rowSize)
-
-	copy(row, primary)
-	copy(row[len(primary):], secondary)
-
+	row := sql.NewUntypedRow().Append(primary).Append(secondary)
 	return row
 }
 
@@ -226,7 +224,7 @@ func newExistsIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode, ro
 		secondaryProvider: j.Right(),
 		cond:              j.Filter,
 		scopeLen:          j.ScopeLen,
-		rowSize:           len(row) + len(j.Left().Schema()) + len(j.Right().Schema()),
+		rowSize:           row.Len() + len(j.Left().Schema()) + len(j.Right().Schema()),
 		nullRej:           !(j.Filter != nil && plan.IsNullRejecting(j.Filter)),
 		b:                 b,
 	}, nil
@@ -260,9 +258,9 @@ const (
 )
 
 func (i *existsIter) Next(ctx *sql.Context) (sql.Row, error) {
-	var row sql.Row
-	var right sql.Row
-	var left sql.Row
+	row := sql.NewUntypedRow()
+	var right sql.Row = sql.UntypedSqlRow{}
+	var left sql.Row = sql.UntypedSqlRow{}
 	var rIter sql.RowIter
 	var err error
 
@@ -365,18 +363,15 @@ func isTrueLit(e sql.Expression) bool {
 }
 
 func (i *existsIter) removeParentRow(r sql.Row) sql.Row {
-	copy(r[i.scopeLen:], r[len(i.parentRow):])
-	r = r[:len(r)-len(i.parentRow)+i.scopeLen]
-	return r
+	vals := r.Values()
+	copy(vals[i.scopeLen:], vals[i.parentRow.Len():])
+	vals = vals[:r.Len()-i.parentRow.Len()+i.scopeLen]
+	return sql.NewUntypedRow(vals...)
 }
 
 // buildRow builds the result set row using the rows from the primary and secondary tables
 func (i *existsIter) buildRow(primary, secondary sql.Row) sql.Row {
-	row := make(sql.Row, i.rowSize)
-
-	copy(row, primary)
-	copy(row[len(primary):], secondary)
-
+	row := sql.NewUntypedRow().Append(primary).Append(secondary)
 	return row
 }
 
@@ -399,9 +394,10 @@ func newFullJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode, 
 		parentRow: row,
 		l:         leftIter,
 		rp:        j.Right(),
+		lp:        j.Left(),
 		cond:      j.Filter,
 		scopeLen:  j.ScopeLen,
-		rowSize:   len(row) + len(j.Left().Schema()) + len(j.Right().Schema()),
+		rowSize:   row.Len() + len(j.Left().Schema()) + len(j.Right().Schema()),
 		seenLeft:  make(map[uint64]struct{}),
 		seenRight: make(map[uint64]struct{}),
 		b:         b,
@@ -413,6 +409,7 @@ func newFullJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode, 
 // runtime and memory complexity O(m+n).
 type fullJoinIter struct {
 	l    sql.RowIter
+	lp   sql.Node
 	rp   sql.Node
 	b    sql.NodeExecBuilder
 	r    sql.RowIter
@@ -463,13 +460,15 @@ func (i *fullJoinIter) Next(ctx *sql.Context) (sql.Row, error) {
 			}
 			if _, ok := i.seenLeft[key]; !ok {
 				// (left, null) only if we haven't matched left
-				ret := i.buildRow(i.leftRow, nil)
+				rightNull := sql.NewSqlRowWithLen(len(i.rp.Schema()))
+				ret := i.buildRow(i.leftRow, rightNull)
 				i.r = nil
 				i.leftRow = nil
 				return i.removeParentRow(ret), nil
 			}
 			i.r = nil
 			i.leftRow = nil
+			continue
 		}
 
 		row := i.buildRow(i.leftRow, rightRow)
@@ -520,24 +519,21 @@ func (i *fullJoinIter) Next(ctx *sql.Context) (sql.Row, error) {
 			continue
 		}
 		// (null, right) only if we haven't matched right
-		ret := i.buildRow(nil, rightRow)
+		ret := i.buildRow(sql.NewSqlRowWithLen(len(i.lp.Schema())), rightRow)
 		return i.removeParentRow(ret), nil
 	}
 }
 
 func (i *fullJoinIter) removeParentRow(r sql.Row) sql.Row {
-	copy(r[i.scopeLen:], r[len(i.parentRow):])
-	r = r[:len(r)-len(i.parentRow)+i.scopeLen]
-	return r
+	vals := r.Values()
+	copy(vals[i.scopeLen:], vals[i.parentRow.Len():])
+	vals = vals[:r.Len()-i.parentRow.Len()+i.scopeLen]
+	return sql.NewUntypedRow(vals...)
 }
 
 // buildRow builds the result set row using the rows from the primary and secondary tables
 func (i *fullJoinIter) buildRow(primary, secondary sql.Row) sql.Row {
-	row := make(sql.Row, i.rowSize)
-
-	copy(row, primary)
-	copy(row[len(primary):], secondary)
-
+	row := sql.NewUntypedRow().Append(primary).Append(secondary)
 	return row
 }
 
@@ -587,7 +583,7 @@ func newCrossJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNode,
 		parentRow: row,
 		l:         l,
 		rp:        j.Right(),
-		rowSize:   len(row) + len(j.Left().Schema()) + len(j.Right().Schema()),
+		rowSize:   row.Len() + len(j.Left().Schema()) + len(j.Right().Schema()),
 		scopeLen:  j.ScopeLen,
 	}), nil
 }
@@ -637,18 +633,19 @@ func (i *crossJoinIterator) Next(ctx *sql.Context) (sql.Row, error) {
 			return nil, err
 		}
 
-		var row sql.Row
-		row = append(row, i.leftRow...)
-		row = append(row, rightRow...)
+		row := sql.NewUntypedRow()
+		row = row.Append(i.leftRow)
+		row = row.Append(rightRow)
 
 		return i.removeParentRow(row), nil
 	}
 }
 
 func (i *crossJoinIterator) removeParentRow(r sql.Row) sql.Row {
-	copy(r[i.scopeLen:], r[len(i.parentRow):])
-	r = r[:len(r)-len(i.parentRow)+i.scopeLen]
-	return r
+	vals := r.Values()
+	copy(vals[i.scopeLen:], vals[i.parentRow.Len():])
+	vals = vals[:r.Len()-i.parentRow.Len()+i.scopeLen]
+	return sql.NewUntypedRow(vals...)
 }
 
 func (i *crossJoinIterator) Close(ctx *sql.Context) (err error) {
@@ -742,7 +739,7 @@ func newLateralJoinIter(ctx *sql.Context, b sql.NodeExecBuilder, j *plan.JoinNod
 		rNode:    j.Right(),
 		cond:     j.Filter,
 		jType:    j.Op,
-		rowSize:  len(row) + len(j.Left().Schema()) + len(j.Right().Schema()),
+		rowSize:  row.Len() + len(j.Left().Schema()) + len(j.Right().Schema()),
 		scopeLen: j.ScopeLen,
 		b:        b,
 	}), nil
@@ -781,22 +778,21 @@ func (i *lateralJoinIterator) loadRight(ctx *sql.Context) error {
 		if err != nil {
 			return err
 		}
-		i.rRow = rRow[len(i.lRow):]
+		i.rRow = rRow.Subslice(i.lRow.Len(), rRow.Len())
 	}
 	return nil
 }
 
-func (i *lateralJoinIterator) buildRow(lRow, rRow sql.Row) sql.Row {
-	row := make(sql.Row, i.rowSize)
-	copy(row, lRow)
-	copy(row[len(lRow):], rRow)
+func (i *lateralJoinIterator) buildRow(primary, secondary sql.Row) sql.Row {
+	row := sql.NewUntypedRow().Append(primary).Append(secondary)
 	return row
 }
 
 func (i *lateralJoinIterator) removeParentRow(r sql.Row) sql.Row {
-	copy(r[i.scopeLen:], r[len(i.pRow):])
-	r = r[:len(r)-len(i.pRow)+i.scopeLen]
-	return r
+	vals := r.Values()
+	copy(vals[i.scopeLen:], vals[i.pRow.Len():])
+	vals = vals[:r.Len()-i.pRow.Len()+i.scopeLen]
+	return sql.NewUntypedRow(vals...)
 }
 
 func (i *lateralJoinIterator) reset(ctx *sql.Context) (err error) {

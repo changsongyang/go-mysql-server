@@ -75,7 +75,7 @@ func TestGroupByRowIter(t *testing.T) {
 	}
 	child := memory.NewTable(db.BaseDatabase, "test", sql.NewPrimaryKeySchema(childSchema), nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("col1_1", int64(1111)),
 		sql.NewRow("col1_1", int64(1111)),
 		sql.NewRow("col1_2", int64(4444)),
@@ -133,7 +133,7 @@ func TestGroupByAggregationGrouping(t *testing.T) {
 
 	child := memory.NewTable(db.BaseDatabase, "test", sql.NewPrimaryKeySchema(childSchema), nil)
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow("col1_1", int64(1111)),
 		sql.NewRow("col1_1", int64(1111)),
 		sql.NewRow("col1_2", int64(4444)),
@@ -160,7 +160,7 @@ func TestGroupByAggregationGrouping(t *testing.T) {
 	rows, err := NodeToRows(ctx, p)
 	require.NoError(err)
 
-	expected := []sql.Row{
+	expected := []sql.UntypedSqlRow{
 		{int64(3), false},
 		{int64(2), false},
 	}
@@ -214,7 +214,7 @@ func TestGroupByCollations(t *testing.T) {
 
 			child := memory.NewTable(db.BaseDatabase, "test", sql.NewPrimaryKeySchema(childSchema), nil)
 
-			rows := []sql.Row{
+			rows := []sql.UntypedSqlRow{
 				sql.NewRow(tc.Value(t, "col1_1"), int64(1111)),
 				sql.NewRow(tc.Value(t, "Col1_1"), int64(1111)),
 				sql.NewRow(tc.Value(t, "col1_2"), int64(4444)),
@@ -241,7 +241,7 @@ func TestGroupByCollations(t *testing.T) {
 			rows, err := NodeToRows(ctx, p)
 			require.NoError(err)
 
-			expected := []sql.Row{
+			expected := []sql.UntypedSqlRow{
 				{float64(3333)},
 				{float64(8888)},
 			}
@@ -264,7 +264,7 @@ func BenchmarkGroupBy(b *testing.B) {
 		plan.NewResolvedTable(table, nil, nil),
 	)
 
-	expected := []sql.Row{{int64(200)}}
+	expected := []sql.UntypedSqlRow{{int64(200)}}
 
 	bench := func(node sql.Node, expected []sql.Row) func(*testing.B) {
 		return func(b *testing.B) {
@@ -297,7 +297,7 @@ func BenchmarkGroupBy(b *testing.B) {
 		plan.NewResolvedTable(table, nil, nil),
 	)
 
-	expected = []sql.Row{}
+	expected = []sql.UntypedSqlRow{}
 	for i := int64(0); i < 50; i++ {
 		expected = append(expected, sql.NewRow(i, int64(200)))
 	}

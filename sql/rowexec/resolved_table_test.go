@@ -80,7 +80,7 @@ func newTableTest(source string) sql.Table {
 		[]byte("partition3"),
 	}
 
-	rows := []sql.Row{
+	rows := []sql.UntypedSqlRow{
 		sql.NewRow(int32(1), int64(9), "one, nine"),
 		sql.NewRow(int32(2), int64(8), "two, eight"),
 		sql.NewRow(int32(3), int64(7), "three, seven"),
@@ -92,10 +92,10 @@ func newTableTest(source string) sql.Table {
 		sql.NewRow(int32(9), int64(1), "nine, one"),
 	}
 
-	partitions := map[string][]sql.Row{
-		"partition1": []sql.Row{rows[0], rows[1], rows[2]},
-		"partition2": []sql.Row{rows[3], rows[4], rows[5]},
-		"partition3": []sql.Row{rows[6], rows[7], rows[8]},
+	partitions := map[string][]sql.UntypedSqlRow{
+		"partition1": []sql.UntypedSqlRow{rows[0], rows[1], rows[2]},
+		"partition2": []sql.UntypedSqlRow{rows[3], rows[4], rows[5]},
+		"partition3": []sql.UntypedSqlRow{rows[6], rows[7], rows[8]},
 	}
 
 	return &dummyTable{schema, keys, partitions, rows}

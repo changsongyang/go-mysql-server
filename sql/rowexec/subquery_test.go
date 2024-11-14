@@ -79,9 +79,9 @@ func TestSubqueryMultipleRows(t *testing.T) {
 		{Name: "t", Source: "foo", Type: types.Text},
 	}), nil)
 
-	require.NoError(table.Insert(ctx, sql.Row{"one"}))
-	require.NoError(table.Insert(ctx, sql.Row{"two"}))
-	require.NoError(table.Insert(ctx, sql.Row{"three"}))
+	require.NoError(table.Insert(ctx, sql.UntypedSqlRow{"one"}))
+	require.NoError(table.Insert(ctx, sql.UntypedSqlRow{"two"}))
+	require.NoError(table.Insert(ctx, sql.UntypedSqlRow{"three"}))
 
 	subquery := plan.NewSubquery(plan.NewProject(
 		[]sql.Expression{
